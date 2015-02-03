@@ -1,0 +1,7 @@
+juggler:
+  build: .
+  command: make docs
+  ports:
+    - "6060:6060"
+  volumes:
+    - ".:/go/src/github.com/dcoxall/juggler"
