@@ -19,7 +19,7 @@ func TestIsPortFree(t *testing.T) {
 	cmd.Stdout = os.Stdout
 	cmd.Start()
 	go func() { cmd.Wait() }()
-	<-time.After(2 * time.Second)
+	<-time.After(time.Second)
 	if IsPortFree(port) {
 		t.Fatalf("Expected port (%d) to not be free", port)
 	}
