@@ -33,7 +33,7 @@ func FindAvailablePort() <-chan int {
 }
 
 func randomPortInfo() (port int, free bool) {
-	port = 3000 + rand.Intn(9999-3000)
+	port = 3000 + rand.Intn(2000)
 	free = IsPortFree(port)
 	return
 }

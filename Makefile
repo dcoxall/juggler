@@ -6,9 +6,9 @@ deps:
 testdeps: deps
 	@go list -f '{{ join .TestImports "\n"}}' ./... | xargs -n1 go get -d
 	@go test -i ./...
+	@go build -o /tmp/ping cmds/ping/ping.go
 
 test: testdeps
-	@go install cmds/ping.go
 	@go test ${TESTARGS} ./...
 
 docs:

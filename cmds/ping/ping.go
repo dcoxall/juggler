@@ -16,6 +16,7 @@ var (
 func init() {
 	// Check that we have the right number of arguments
 	if len(os.Args) != 3 {
+		fmt.Fprintf(os.Stderr, "Too few arguments")
 		os.Exit(1)
 	}
 	listen = os.Args[1]
@@ -26,5 +27,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, pong)
 	})
-	http.ListenAndServe(listen, nil)
+	fmt.Fprintf(os.Stderr, "Starting\n")
+	fmt.Printf("%s\n", http.ListenAndServe(listen, nil))
+	fmt.Fprintf(os.Stderr, "Exiting\n")
 }

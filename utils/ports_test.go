@@ -5,16 +5,20 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+	"os"
 )
 
 func TestIsPortFree(t *testing.T) {
-	port := 3456
-	addr := fmt.Sprintf("localhost:%d", port)
+	port := <- FindAvailablePort()
+	addr := fmt.Sprintf(":%d", port)
 	if !IsPortFree(port) {
 		t.Fatalf("Expected port (%d) to be free", port)
 	}
-	cmd := exec.Command("ping", addr, "pong")
-	go func() { cmd.Run() }()
+	cmd := exec.Command("/tmp/ping", addr, "pong")
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Start()
+	go func() { cmd.Wait() }()
 	<-time.After(2 * time.Second)
 	if IsPortFree(port) {
 		t.Fatalf("Expected port (%d) to not be free", port)
