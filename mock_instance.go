@@ -37,9 +37,17 @@ func NewInstance(port int, ref string) *MockInstance {
 	}
 }
 
+func (i *MockInstance) Started() bool {
+	return i.state == Running
+}
+
+func (i *MockInstance) Stopped() bool {
+	return i.state == Stopped
+}
+
 func (i *MockInstance) Start() (<-chan int, error) {
 	// We can't start if we aren't stopped
-	if i.state != Stopped {
+	if !i.Stopped() {
 		return i.stateChan, fmt.Errorf("Unable to start")
 	}
 
@@ -59,7 +67,7 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel
 	go func(instance *MockInstance) {
-		for instance.state != Running {
+		for !instance.Started() {
 			select {
 			case <-instance.forceStop:
 				return
@@ -84,7 +92,7 @@ func (i *MockInstance) Start() (<-chan int, error) {
 
 func (i *MockInstance) Stop() (<-chan int, error) {
 	// We can't start if we aren't stopped
-	if i.state != Running {
+	if !i.Started() {
 		return i.stateChan, fmt.Errorf("Unable to stop")
 	}
 	i.state = Stopping
@@ -112,7 +120,7 @@ func (i *MockInstance) ForceStop() error {
 }
 
 func (i *MockInstance) ReverseProxy() (*httputil.ReverseProxy, error) {
-	if i.state != Running {
+	if !i.Started() {
 		return nil, fmt.Errorf("Instance not yet started")
 	}
 	return i.proxy, nil

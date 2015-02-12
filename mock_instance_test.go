@@ -12,6 +12,9 @@ import (
 func TestStartingStoppingInstance(t *testing.T) {
 	port := <-utils.FindAvailablePort()
 	instance := NewInstance(port, "startstop")
+	if instance.Started() {
+		t.Errorf("Instance should not have started")
+	}
 	ready, err := instance.Start()
 	if err != nil {
 		t.Fatalf("error: %s", err)
@@ -26,6 +29,12 @@ func TestStartingStoppingInstance(t *testing.T) {
 		instance.ForceStop()
 		t.Fatalf("instance state not updated")
 	}
+	if !instance.Started() {
+		t.Errorf("Instance claims to have not started")
+	}
+	if instance.Stopped() {
+		t.Errorf("Instance should not be stopped")
+	}
 	stopped, err := instance.Stop()
 	if err != nil {
 		t.Fatalf("error: %s", err)
@@ -39,6 +48,9 @@ func TestStartingStoppingInstance(t *testing.T) {
 	case <-timeout:
 		instance.ForceStop()
 		t.Fatalf("instance never stopped before timeout period")
+	}
+	if !instance.Stopped() {
+		t.Errorf("Instance claims to have not stopped")
 	}
 }
 
