@@ -21,8 +21,7 @@ type MockInstance struct {
 	port      int
 	ref       string
 	state     int
-	startChan chan int
-	stopChan  chan int
+	stateChan chan int
 	forceStop chan int
 	cmd       *exec.Cmd
 	proxy     *httputil.ReverseProxy
@@ -33,8 +32,7 @@ func NewInstance(port int, ref string) *MockInstance {
 		port:      port,
 		ref:       ref,
 		state:     Stopped,
-		startChan: make(chan int, 1),
-		stopChan:  make(chan int, 1),
+		stateChan: make(chan int, 1),
 		forceStop: make(chan int, 1),
 	}
 }
@@ -42,7 +40,7 @@ func NewInstance(port int, ref string) *MockInstance {
 func (i *MockInstance) Start() (<-chan int, error) {
 	// We can't start if we aren't stopped
 	if i.state != Stopped {
-		return i.startChan, fmt.Errorf("Unable to start")
+		return i.stateChan, fmt.Errorf("Unable to start")
 	}
 
 	// store and start the command
@@ -54,16 +52,9 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	i.cmd.Stdout = os.Stdout
 	i.cmd.Stderr = os.Stderr
 	if err := i.cmd.Start(); err != nil {
-		return i.startChan, err
+		return i.stateChan, err
 	}
 	i.state = Starting
-
-	// Begin watching this process and signal when it ends
-	go func() {
-		i.cmd.Wait()
-		i.state = Stopped
-		i.stopChan <- i.state
-	}()
 
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel
@@ -85,29 +76,34 @@ func (i *MockInstance) Start() (<-chan int, error) {
 			Host:   fmt.Sprintf("localhost:%d", i.port),
 		}
 		i.proxy = httputil.NewSingleHostReverseProxy(url)
-		i.startChan <- i.state
+		i.stateChan <- i.state
 	}()
 
 	// return our channel that indicates a change in state
-	return i.startChan, nil
+	return i.stateChan, nil
 }
 
 func (i *MockInstance) Stop() (<-chan int, error) {
 	// We can't start if we aren't stopped
 	if i.state != Running {
-		return i.stopChan, fmt.Errorf("Unable to stop")
+		return i.stateChan, fmt.Errorf("Unable to stop")
 	}
 	i.state = Stopping
 
-	// we already have a go routine watching the command and that will update
-	// the state when it ends so we just need to trigger a change in that
-	// process to proceed with stopping the process.
+	// Begin watching this process and signal when it ends
+	go func() {
+		i.cmd.Wait()
+		i.state = Stopped
+		i.stateChan <- i.state
+	}()
+
+	// send the kill signal to actually stop the process
 	if err := i.cmd.Process.Signal(os.Kill); err != nil {
-		return i.stopChan, err
+		return i.stateChan, err
 	}
 
 	// return our channel that indicates a change in state
-	return i.stopChan, nil
+	return i.stateChan, nil
 }
 
 // This will forcably kill any process as well as stopping any starting process
