@@ -18,24 +18,24 @@ const (
 )
 
 type MockInstance struct {
-	port        int
-	ref         string
-	state       int
-	startChan   chan int
-	stopChan    chan int
-	forceStop   chan int
-	cmd         *exec.Cmd
-	proxy       *httputil.ReverseProxy
+	port      int
+	ref       string
+	state     int
+	startChan chan int
+	stopChan  chan int
+	forceStop chan int
+	cmd       *exec.Cmd
+	proxy     *httputil.ReverseProxy
 }
 
 func NewInstance(port int, ref string) *MockInstance {
 	return &MockInstance{
-		port:        port,
-		ref:         ref,
-		state:       Stopped,
-		startChan:   make(chan int, 1),
-		stopChan:    make(chan int, 1),
-		forceStop:   make(chan int, 1),
+		port:      port,
+		ref:       ref,
+		state:     Stopped,
+		startChan: make(chan int, 1),
+		stopChan:  make(chan int, 1),
+		forceStop: make(chan int, 1),
 	}
 }
 
@@ -59,11 +59,8 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	i.state = Starting
 
 	// Begin watching this process and signal when it ends
-	go func(){
-		if err := i.cmd.Wait(); err != nil {
-			fmt.Printf("error: %v\n", err)
-		}
-		fmt.Printf("stopped\n")
+	go func() {
+		i.cmd.Wait()
 		i.state = Stopped
 		i.stopChan <- i.state
 	}()
@@ -71,19 +68,18 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel
 	go func() {
-		for {
+		for i.state != Running {
 			select {
-			case <- i.forceStop:
+			case <-i.forceStop:
 				return
 			default:
 				if utils.IsPortFree(i.port) {
 					time.Sleep(500 * time.Millisecond)
 				} else {
-					break
+					i.state = Running
 				}
 			}
 		}
-		i.state = Running
 		url := &url.URL{
 			Scheme: "http",
 			Host:   fmt.Sprintf("localhost:%d", i.port),
@@ -115,7 +111,7 @@ func (i *MockInstance) Stop() (<-chan int, error) {
 }
 
 // This will forcably kill any process as well as stopping any starting process
-func (i *MockInstance) ForceStop() (error) {
+func (i *MockInstance) ForceStop() error {
 	i.forceStop <- 1
 	return i.cmd.Process.Kill()
 }

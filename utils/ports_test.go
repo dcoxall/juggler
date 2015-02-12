@@ -2,14 +2,14 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
-	"os"
 )
 
 func TestIsPortFree(t *testing.T) {
-	port := <- FindAvailablePort()
+	port := <-FindAvailablePort()
 	addr := fmt.Sprintf(":%d", port)
 	if !IsPortFree(port) {
 		t.Fatalf("Expected port (%d) to be free", port)

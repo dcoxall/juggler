@@ -24,7 +24,7 @@ func TestStartingStoppingInstance(t *testing.T) {
 		}
 	case <-timeout:
 		instance.ForceStop()
-		t.Fatalf("instance never started before timeout period")
+		t.Fatalf("instance state not updated")
 	}
 	stopped, err := instance.Stop()
 	if err != nil {
@@ -45,9 +45,9 @@ func TestStartingStoppingInstance(t *testing.T) {
 func TestInstanceStartErrors(t *testing.T) {
 	port := <-utils.FindAvailablePort()
 	instance := NewInstance(port, "starterrors")
-	ready, sErr := instance.Start()
-	if sErr != nil {
-		t.Fatalf("error: %s", sErr)
+	ready, err := instance.Start()
+	if err != nil {
+		t.Fatalf("error: %s", err)
 	}
 	timeout := time.After(2 * time.Second)
 	if _, err := instance.Start(); err == nil {
@@ -59,10 +59,10 @@ func TestInstanceStartErrors(t *testing.T) {
 		instance.ForceStop()
 		t.Fatalf("instance never started before timeout period")
 	}
-	instance.Stop()
+	stopped, _ := instance.Stop()
 	timeout = time.After(2 * time.Second)
 	select {
-	case <-ready:
+	case <-stopped:
 	case <-timeout:
 		instance.ForceStop()
 		t.Fatalf("instance never stopped within timeout period")

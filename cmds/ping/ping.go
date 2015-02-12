@@ -27,7 +27,5 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, pong)
 	})
-	fmt.Fprintf(os.Stderr, "Starting\n")
 	fmt.Printf("%s\n", http.ListenAndServe(listen, nil))
-	fmt.Fprintf(os.Stderr, "Exiting\n")
 }
