@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/dcoxall/juggler.svg?branch=master)](https://travis-ci.org/dcoxall/juggler)
+[![Build Status](https://travis-ci.org/dcoxall/juggler.svg?branch=develop)](https://travis-ci.org/dcoxall/juggler)
 
 Juggler
 =======
