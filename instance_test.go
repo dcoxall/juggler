@@ -9,7 +9,7 @@ import (
 )
 
 func TestInstanceInterface(t *testing.T) {
-	var itf interface {} = new(Instance)
+	var itf interface{} = new(Instance)
 	if _, ok := itf.(Instancer); !ok {
 		t.Fatalf("Instance doesn't fulfill Instancer interface")
 	}

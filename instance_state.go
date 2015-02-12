@@ -3,7 +3,7 @@ package juggler
 type InstanceState int
 
 const (
-	Stopped  InstanceState = iota
+	Stopped InstanceState = iota
 	Starting
 	Running
 	Stopping
