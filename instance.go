@@ -10,18 +10,11 @@ import (
 	"time"
 )
 
-const (
-	Stopped = iota
-	Starting
-	Running
-	Stopping
-)
-
 type Instance struct {
 	port      int
 	ref       string
-	state     int
-	stateChan chan int
+	state     InstanceState
+	stateChan chan InstanceState
 	forceStop chan int
 	cmd       *exec.Cmd
 	proxy     *httputil.ReverseProxy
@@ -32,7 +25,7 @@ func NewInstance(ref string) *Instance {
 		port:      <-utils.FindAvailablePort(),
 		ref:       ref,
 		state:     Stopped,
-		stateChan: make(chan int, 1),
+		stateChan: make(chan InstanceState, 1),
 		forceStop: make(chan int, 1),
 	}
 }
@@ -45,7 +38,7 @@ func (i *Instance) Stopped() bool {
 	return i.state == Stopped
 }
 
-func (i *Instance) Start() (<-chan int, error) {
+func (i *Instance) Start() (<-chan InstanceState, error) {
 	// We can't start if we aren't stopped
 	if !i.Stopped() {
 		return i.stateChan, fmt.Errorf("Unable to start")
@@ -57,8 +50,6 @@ func (i *Instance) Start() (<-chan int, error) {
 		fmt.Sprintf(":%d", i.port),
 		i.ref,
 	)
-	i.cmd.Stdout = os.Stdout
-	i.cmd.Stderr = os.Stderr
 	if err := i.cmd.Start(); err != nil {
 		return i.stateChan, err
 	}
@@ -90,7 +81,7 @@ func (i *Instance) Start() (<-chan int, error) {
 	return i.stateChan, nil
 }
 
-func (i *Instance) Stop() (<-chan int, error) {
+func (i *Instance) Stop() (<-chan InstanceState, error) {
 	// We can't start if we aren't stopped
 	if !i.Started() {
 		return i.stateChan, fmt.Errorf("Unable to stop")
