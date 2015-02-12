@@ -27,9 +27,9 @@ type Instance struct {
 	proxy     *httputil.ReverseProxy
 }
 
-func NewInstance(port int, ref string) *Instance {
+func NewInstance(ref string) *Instance {
 	return &Instance{
-		port:      port,
+		port:      <-utils.FindAvailablePort(),
 		ref:       ref,
 		state:     Stopped,
 		stateChan: make(chan int, 1),

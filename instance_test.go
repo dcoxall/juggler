@@ -1,7 +1,6 @@
 package juggler
 
 import (
-	"github.com/dcoxall/juggler/utils"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -10,8 +9,7 @@ import (
 )
 
 func TestStartingStoppingInstance(t *testing.T) {
-	port := <-utils.FindAvailablePort()
-	instance := NewInstance(port, "startstop")
+	instance := NewInstance("startstop")
 	if instance.Started() {
 		t.Errorf("Instance should not have started")
 	}
@@ -55,8 +53,7 @@ func TestStartingStoppingInstance(t *testing.T) {
 }
 
 func TestInstanceStartErrors(t *testing.T) {
-	port := <-utils.FindAvailablePort()
-	instance := NewInstance(port, "starterrors")
+	instance := NewInstance("starterrors")
 	ready, err := instance.Start()
 	if err != nil {
 		t.Fatalf("error: %s", err)
@@ -82,8 +79,7 @@ func TestInstanceStartErrors(t *testing.T) {
 }
 
 func TestInstanceStopErrors(t *testing.T) {
-	port := <-utils.FindAvailablePort()
-	instance := NewInstance(port, "stoperrors")
+	instance := NewInstance("stoperrors")
 	if _, err := instance.Stop(); err == nil {
 		t.Errorf("Expected an error when stopping an already stopped instance")
 	}
@@ -92,8 +88,8 @@ func TestInstanceStopErrors(t *testing.T) {
 func TestInstanceProxying(t *testing.T) {
 	var wg sync.WaitGroup
 	instances := map[string]*Instance{
-		"foo": NewInstance(<-utils.FindAvailablePort(), "foo"),
-		"bar": NewInstance(<-utils.FindAvailablePort(), "bar"),
+		"foo": NewInstance("foo"),
+		"bar": NewInstance("bar"),
 	}
 	for ref, i := range instances {
 		wg.Add(1)
