@@ -8,7 +8,7 @@ testdeps: deps
 	@go test -i ./...
 
 test: testdeps
-	@GOBIN=/usr/local/bin go install cmds/ping.go
+	@go install cmds/ping.go
 	@go test ${TESTARGS} ./...
 
 docs:
