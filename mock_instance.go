@@ -58,26 +58,25 @@ func (i *MockInstance) Start() (<-chan int, error) {
 
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel
-	go func() {
-		for i.state != Running {
+	go func(instance *MockInstance) {
+		for instance.state != Running {
 			select {
-			case <-i.forceStop:
+			case <-instance.forceStop:
 				return
 			default:
-				if utils.IsPortFree(i.port) {
+				if utils.IsPortFree(instance.port) {
 					time.Sleep(500 * time.Millisecond)
 				} else {
-					i.state = Running
+					instance.state = Running
 				}
 			}
 		}
-		url := &url.URL{
+		instance.proxy = httputil.NewSingleHostReverseProxy(&url.URL{
 			Scheme: "http",
-			Host:   fmt.Sprintf("localhost:%d", i.port),
-		}
-		i.proxy = httputil.NewSingleHostReverseProxy(url)
-		i.stateChan <- i.state
-	}()
+			Host:   fmt.Sprintf("localhost:%d", instance.port),
+		})
+		instance.stateChan <- instance.state
+	}(i)
 
 	// return our channel that indicates a change in state
 	return i.stateChan, nil
@@ -91,11 +90,11 @@ func (i *MockInstance) Stop() (<-chan int, error) {
 	i.state = Stopping
 
 	// Begin watching this process and signal when it ends
-	go func() {
-		i.cmd.Wait()
-		i.state = Stopped
-		i.stateChan <- i.state
-	}()
+	go func(instance *MockInstance) {
+		instance.cmd.Wait()
+		instance.state = Stopped
+		instance.stateChan <- instance.state
+	}(i)
 
 	// send the kill signal to actually stop the process
 	if err := i.cmd.Process.Signal(os.Kill); err != nil {
