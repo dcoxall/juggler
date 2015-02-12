@@ -25,7 +25,7 @@ func init() {
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, pong)
+		fmt.Fprint(w, pong)
 	})
 	fmt.Printf("%s\n", http.ListenAndServe(listen, nil))
 }

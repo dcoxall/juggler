@@ -2,9 +2,9 @@ package juggler
 
 import (
 	"github.com/dcoxall/juggler/utils"
-	_ "net/http"
-	_ "net/http/httptest"
-	_ "sync"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 )
@@ -77,39 +77,66 @@ func TestInstanceStopErrors(t *testing.T) {
 	}
 }
 
-// func TestInstanceProxying(t *testing.T) {
-// 	var wg sync.WaitGroup
-// 	references := map[string]*MockInstance {
-// 		"foo": NewInstance(<-utils.FindAvailablePort(), "foo"),
-// 		"bar": NewInstance(<-utils.FindAvailablePort(), "bar"),
-// 	}
-// 	for _, i := range references {
-// 		wg.Add(1)
-// 		go func(){
-// 			ready, _ := i.Start()
-// 			<- ready // block until ready
-// 			wg.Done()
-// 		}()
-// 	}
-// 	wg.Wait() // wait until our 2 instances have started
-//
-// 	// make a request to both instances and assert different responses
-// 	for ref, i := range references {
-// 		proxy, _ := i.ReverseProxy()
-// 		req, _ := http.NewRequest("GET", "http://example.com/", nil)
-// 		w := httptest.NewRecorder()
-// 		proxy.ServeHTTP(w, req)
-// 		if body := w.Body.String(); body != ref {
-// 			t.Errorf("Expected response body to be %v but got %v", ref, body)
-// 		}
-//
-// 		// wg.Add(1)
-// 		// go func(){
-// 		// 	stopped, _ := i.Stop()
-// 		// 	<- stopped // block until ready
-// 		// 	wg.Done()
-// 		// }()
-// 	}
-//
-// 	// wg.Wait() // wait until instances have been removed
-// }
+func TestInstanceProxying(t *testing.T) {
+	var wg sync.WaitGroup
+	instances := map[string]*MockInstance{
+		"foo": NewInstance(<-utils.FindAvailablePort(), "foo"),
+		"bar": NewInstance(<-utils.FindAvailablePort(), "bar"),
+	}
+	for ref, i := range instances {
+		wg.Add(1)
+		go func(instance *MockInstance) {
+			ready, _ := instance.Start()
+			done := false
+			timeout := time.After(2 * time.Second)
+			for !done {
+				select {
+				case <-ready:
+					wg.Done()
+					done = true
+				case <-timeout:
+					wg.Done()
+					done = true
+					t.Fatalf("State change failed to occur within timeout for %s", ref)
+				default:
+					time.Sleep(500 * time.Millisecond)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait() // wait until our 2 instances have started
+
+	// make a request to both instances and assert different responses
+	for ref, i := range instances {
+		proxy, _ := i.ReverseProxy()
+		req, _ := http.NewRequest("GET", "http://example.com/", nil)
+		w := httptest.NewRecorder()
+		proxy.ServeHTTP(w, req)
+		if body := w.Body.String(); body != ref {
+			t.Errorf("Expected response body to be %v but got %v", ref, body)
+		}
+
+		wg.Add(1)
+		go func(instance *MockInstance) {
+			stopped, _ := instance.Stop()
+			done := false
+			timeout := time.After(2 * time.Second)
+			for !done {
+				select {
+				case <-stopped:
+					wg.Done()
+					done = true
+				case <-timeout:
+					wg.Done()
+					done = true
+					t.Fatalf("State change failed to occur within timeout for %s", ref)
+				default:
+					time.Sleep(500 * time.Millisecond)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait() // wait until instances have been removed
+}
