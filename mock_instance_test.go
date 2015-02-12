@@ -1,17 +1,19 @@
 package juggler
 
 import (
+	"github.com/dcoxall/juggler/utils"
 	"testing"
 	"time"
 )
 
 func TestStartingStoppingInstance(t *testing.T) {
-	instance := NewInstance()
+	port := <-utils.FindAvailablePort()
+	instance := NewInstance(port, "pong")
 	ready, err := instance.Start()
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
-	timeout := time.After(10 * time.Second)
+	timeout := time.After(5 * time.Second)
 	select {
 	case state := <-ready:
 		if state != Running {
@@ -24,7 +26,7 @@ func TestStartingStoppingInstance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %s", err)
 	}
-	timeout = time.After(10 * time.Second)
+	timeout = time.After(5 * time.Second)
 	select {
 	case state := <-stopped:
 		if state != Stopped {
@@ -36,9 +38,10 @@ func TestStartingStoppingInstance(t *testing.T) {
 }
 
 func TestInstanceStartErrors(t *testing.T) {
-	instance := NewInstance()
+	port := <-utils.FindAvailablePort()
+	instance := NewInstance(port, "pong")
 	ready, _ := instance.Start()
-	timeout := time.After(4 * time.Second)
+	timeout := time.After(5 * time.Second)
 	if _, err := instance.Start(); err == nil {
 		t.Errorf("Expected an error when starting an already started instance")
 	}
@@ -48,7 +51,7 @@ func TestInstanceStartErrors(t *testing.T) {
 		t.Fatalf("instance never started before timeout period")
 	}
 	instance.Stop()
-	timeout = time.After(4 * time.Second)
+	timeout = time.After(5 * time.Second)
 	select {
 	case <-ready:
 	case <-timeout:
@@ -57,7 +60,8 @@ func TestInstanceStartErrors(t *testing.T) {
 }
 
 func TestInstanceStopErrors(t *testing.T) {
-	instance := NewInstance()
+	port := <-utils.FindAvailablePort()
+	instance := NewInstance(port, "pong")
 	if _, err := instance.Stop(); err == nil {
 		t.Errorf("Expected an error when stopping an already stopped instance")
 	}

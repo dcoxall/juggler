@@ -15,13 +15,17 @@ const (
 )
 
 type MockInstance struct {
+	port        int
+	ref         string
 	state       int
 	stateChange chan int
 	cmd         *exec.Cmd
 }
 
-func NewInstance() *MockInstance {
+func NewInstance(port int, ref string) *MockInstance {
 	return &MockInstance{
+		port:        port,
+		ref:         ref,
 		state:       Stopped,
 		stateChange: make(chan int),
 	}
@@ -34,7 +38,11 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	}
 
 	// store and start the command
-	i.cmd = exec.Command("tail", "-f", "/var/log/dpkg.log")
+	i.cmd = exec.Command(
+		"ping",
+		fmt.Sprintf(":%s", i.port),
+		i.ref,
+	)
 	if err := i.cmd.Start(); err != nil {
 		return i.stateChange, err
 	}
