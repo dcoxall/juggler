@@ -38,10 +38,11 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	if err := i.cmd.Start(); err != nil {
 		return i.stateChange, err
 	}
+	i.state = Starting
 
 	// in the background let's wait 5 seconds and trigger completion
 	time.AfterFunc(
-		5*time.Second,
+		2*time.Second,
 		func() {
 			i.state = Running
 			i.stateChange <- i.state
