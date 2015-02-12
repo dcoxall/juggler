@@ -87,20 +87,13 @@ func TestInstanceProxying(t *testing.T) {
 		wg.Add(1)
 		go func(instance *MockInstance) {
 			ready, _ := instance.Start()
-			done := false
 			timeout := time.After(2 * time.Second)
-			for !done {
-				select {
-				case <-ready:
-					wg.Done()
-					done = true
-				case <-timeout:
-					wg.Done()
-					done = true
-					t.Fatalf("State change failed to occur within timeout for %s", ref)
-				default:
-					time.Sleep(500 * time.Millisecond)
-				}
+			select {
+			case <-ready:
+				wg.Done()
+			case <-timeout:
+				wg.Done()
+				t.Fatalf("State change failed to occur within timeout for %s", ref)
 			}
 		}(i)
 	}
@@ -120,20 +113,13 @@ func TestInstanceProxying(t *testing.T) {
 		wg.Add(1)
 		go func(instance *MockInstance) {
 			stopped, _ := instance.Stop()
-			done := false
 			timeout := time.After(2 * time.Second)
-			for !done {
-				select {
-				case <-stopped:
-					wg.Done()
-					done = true
-				case <-timeout:
-					wg.Done()
-					done = true
-					t.Fatalf("State change failed to occur within timeout for %s", ref)
-				default:
-					time.Sleep(500 * time.Millisecond)
-				}
+			select {
+			case <-stopped:
+				wg.Done()
+			case <-timeout:
+				wg.Done()
+				t.Fatalf("State change failed to occur within timeout for %s", ref)
 			}
 		}(i)
 	}
