@@ -38,6 +38,14 @@ func (i *Instance) Stopped() bool {
 	return i.state == Stopped
 }
 
+func (i *Instance) Stopping() bool {
+	return i.state == Stopping
+}
+
+func (i *Instance) Starting() bool {
+	return i.state == Starting
+}
+
 func (i *Instance) Start() (<-chan InstanceState, error) {
 	// We can't start if we aren't stopped
 	if !i.Stopped() {

@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+func TestInstanceInterface(t *testing.T) {
+	var itf interface {} = new(Instance)
+	if _, ok := itf.(Instancer); !ok {
+		t.Fatalf("Instance doesn't fulfill Instancer interface")
+	}
+}
+
 func TestStartingStoppingInstance(t *testing.T) {
 	instance := NewInstance("startstop")
 	if instance.Started() {
