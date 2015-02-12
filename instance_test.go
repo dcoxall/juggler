@@ -91,13 +91,13 @@ func TestInstanceStopErrors(t *testing.T) {
 
 func TestInstanceProxying(t *testing.T) {
 	var wg sync.WaitGroup
-	instances := map[string]*MockInstance{
+	instances := map[string]*Instance{
 		"foo": NewInstance(<-utils.FindAvailablePort(), "foo"),
 		"bar": NewInstance(<-utils.FindAvailablePort(), "bar"),
 	}
 	for ref, i := range instances {
 		wg.Add(1)
-		go func(instance *MockInstance) {
+		go func(instance *Instance) {
 			ready, _ := instance.Start()
 			timeout := time.After(2 * time.Second)
 			select {
@@ -123,7 +123,7 @@ func TestInstanceProxying(t *testing.T) {
 		}
 
 		wg.Add(1)
-		go func(instance *MockInstance) {
+		go func(instance *Instance) {
 			stopped, _ := instance.Stop()
 			timeout := time.After(2 * time.Second)
 			select {

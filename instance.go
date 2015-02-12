@@ -17,7 +17,7 @@ const (
 	Stopping
 )
 
-type MockInstance struct {
+type Instance struct {
 	port      int
 	ref       string
 	state     int
@@ -27,8 +27,8 @@ type MockInstance struct {
 	proxy     *httputil.ReverseProxy
 }
 
-func NewInstance(port int, ref string) *MockInstance {
-	return &MockInstance{
+func NewInstance(port int, ref string) *Instance {
+	return &Instance{
 		port:      port,
 		ref:       ref,
 		state:     Stopped,
@@ -37,15 +37,15 @@ func NewInstance(port int, ref string) *MockInstance {
 	}
 }
 
-func (i *MockInstance) Started() bool {
+func (i *Instance) Started() bool {
 	return i.state == Running
 }
 
-func (i *MockInstance) Stopped() bool {
+func (i *Instance) Stopped() bool {
 	return i.state == Stopped
 }
 
-func (i *MockInstance) Start() (<-chan int, error) {
+func (i *Instance) Start() (<-chan int, error) {
 	// We can't start if we aren't stopped
 	if !i.Stopped() {
 		return i.stateChan, fmt.Errorf("Unable to start")
@@ -66,7 +66,7 @@ func (i *MockInstance) Start() (<-chan int, error) {
 
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel
-	go func(instance *MockInstance) {
+	go func(instance *Instance) {
 		for !instance.Started() {
 			select {
 			case <-instance.forceStop:
@@ -90,7 +90,7 @@ func (i *MockInstance) Start() (<-chan int, error) {
 	return i.stateChan, nil
 }
 
-func (i *MockInstance) Stop() (<-chan int, error) {
+func (i *Instance) Stop() (<-chan int, error) {
 	// We can't start if we aren't stopped
 	if !i.Started() {
 		return i.stateChan, fmt.Errorf("Unable to stop")
@@ -98,7 +98,7 @@ func (i *MockInstance) Stop() (<-chan int, error) {
 	i.state = Stopping
 
 	// Begin watching this process and signal when it ends
-	go func(instance *MockInstance) {
+	go func(instance *Instance) {
 		instance.cmd.Wait()
 		instance.state = Stopped
 		instance.stateChan <- instance.state
@@ -114,12 +114,12 @@ func (i *MockInstance) Stop() (<-chan int, error) {
 }
 
 // This will forcably kill any process as well as stopping any starting process
-func (i *MockInstance) ForceStop() error {
+func (i *Instance) ForceStop() error {
 	i.forceStop <- 1
 	return i.cmd.Process.Kill()
 }
 
-func (i *MockInstance) ReverseProxy() (*httputil.ReverseProxy, error) {
+func (i *Instance) ReverseProxy() (*httputil.ReverseProxy, error) {
 	if !i.Started() {
 		return nil, fmt.Errorf("Instance not yet started")
 	}
