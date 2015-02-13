@@ -30,4 +30,9 @@ func TestSpawnerInstanceStorage(t *testing.T) {
 	if generated != 2 {
 		t.Errorf("Expected to only generate twice but got %d", generated)
 	}
+	spawner.Remove("foobar") // forget about foobar
+	spawner.Fetch("foobar")  // should regenerate
+	if generated != 3 {
+		t.Errorf("Expected to regenerate instance")
+	}
 }

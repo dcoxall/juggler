@@ -29,6 +29,14 @@ func (s *Spawner) Fetch(reference string) (Instancer, error) {
 	}
 }
 
+func (s *Spawner) Remove(reference string) error {
+	if _, err := s.getInstance(reference); err != nil {
+		return err
+	}
+	delete(s.instances, reference)
+	return nil
+}
+
 func (s *Spawner) getInstance(reference string) (Instancer, error) {
 	for key, instance := range s.instances {
 		if key == reference {
