@@ -11,22 +11,24 @@ import (
 )
 
 type Instance struct {
-	port      int
-	ref       string
-	state     InstanceState
-	stateChan chan InstanceState
-	forceStop chan int
-	cmd       *exec.Cmd
-	proxy     *httputil.ReverseProxy
+	port         int
+	ref          string
+	state        InstanceState
+	stateChan    chan InstanceState
+	forceStop    chan int
+	cmd          *exec.Cmd
+	proxy        *httputil.ReverseProxy
+	bootstrapper Bootstrapper
 }
 
-func NewInstance(ref string) *Instance {
+func NewInstance(bootstrapper Bootstrapper, ref string) *Instance {
 	return &Instance{
-		port:      <-utils.FindAvailablePort(),
-		ref:       ref,
-		state:     Stopped,
-		stateChan: make(chan InstanceState, 1),
-		forceStop: make(chan int, 1),
+		port:         <-utils.FindAvailablePort(),
+		ref:          ref,
+		state:        Stopped,
+		stateChan:    make(chan InstanceState, 1),
+		forceStop:    make(chan int, 1),
+		bootstrapper: bootstrapper,
 	}
 }
 
@@ -52,16 +54,13 @@ func (i *Instance) Start() (<-chan InstanceState, error) {
 		return i.stateChan, fmt.Errorf("Unable to start")
 	}
 
-	// store and start the command
-	i.cmd = exec.Command(
-		"/tmp/ping",
-		fmt.Sprintf(":%d", i.port),
-		i.ref,
-	)
-	if err := i.cmd.Start(); err != nil {
+	i.state = Starting
+
+	cmd, err := i.bootstrapper.Bootstrap(i.port, i.ref)
+	i.cmd = cmd
+	if err != nil {
 		return i.stateChan, err
 	}
-	i.state = Starting
 
 	// in the background let's wait until we can connect and then trigger
 	// completion on the channel

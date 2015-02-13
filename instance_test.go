@@ -1,6 +1,7 @@
 package juggler
 
 import (
+	"github.com/dcoxall/juggler/utils/jugglertest"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -16,7 +17,7 @@ func TestInstanceInterface(t *testing.T) {
 }
 
 func TestStartingStoppingInstance(t *testing.T) {
-	instance := NewInstance("startstop")
+	instance := NewInstance(&jugglertest.ExampleBootstrap{}, "startstop")
 	if instance.Started() {
 		t.Errorf("Instance should not have started")
 	}
@@ -60,7 +61,7 @@ func TestStartingStoppingInstance(t *testing.T) {
 }
 
 func TestInstanceStartErrors(t *testing.T) {
-	instance := NewInstance("starterrors")
+	instance := NewInstance(&jugglertest.ExampleBootstrap{}, "starterrors")
 	ready, err := instance.Start()
 	if err != nil {
 		t.Fatalf("error: %s", err)
@@ -86,7 +87,7 @@ func TestInstanceStartErrors(t *testing.T) {
 }
 
 func TestInstanceStopErrors(t *testing.T) {
-	instance := NewInstance("stoperrors")
+	instance := NewInstance(&jugglertest.ExampleBootstrap{}, "stoperrors")
 	if _, err := instance.Stop(); err == nil {
 		t.Errorf("Expected an error when stopping an already stopped instance")
 	}
@@ -95,8 +96,8 @@ func TestInstanceStopErrors(t *testing.T) {
 func TestInstanceProxying(t *testing.T) {
 	var wg sync.WaitGroup
 	instances := map[string]*Instance{
-		"foo": NewInstance("foo"),
-		"bar": NewInstance("bar"),
+		"foo": NewInstance(&jugglertest.ExampleBootstrap{}, "foo"),
+		"bar": NewInstance(&jugglertest.ExampleBootstrap{}, "bar"),
 	}
 	for ref, i := range instances {
 		wg.Add(1)

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -15,8 +14,6 @@ func TestIsPortFree(t *testing.T) {
 		t.Fatalf("Expected port (%d) to be free", port)
 	}
 	cmd := exec.Command("/tmp/ping", addr, "pong")
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
 	cmd.Start()
 	go func() { cmd.Wait() }()
 	<-time.After(time.Second)
