@@ -56,6 +56,7 @@ func (i *Instance) Start() (<-chan InstanceState, error) {
 
 	i.state = Starting
 
+	// consider using sync.Once
 	cmd, err := i.bootstrapper.Bootstrap(i.port, i.ref)
 	i.cmd = cmd
 	if err != nil {
