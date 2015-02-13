@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Instance is an Instancer structure that allows custom applications to be
+// managed in asynchronously.
 type Instance struct {
 	port         int
 	ref          string
@@ -21,6 +23,8 @@ type Instance struct {
 	bootstrapper Bootstrapper
 }
 
+// NewInstance takes a Bootstrapper and a reference string and returns an
+// appropriately configured Instance.
 func NewInstance(bootstrapper Bootstrapper, ref string) *Instance {
 	return &Instance{
 		port:         <-utils.FindAvailablePort(),
@@ -32,22 +36,29 @@ func NewInstance(bootstrapper Bootstrapper, ref string) *Instance {
 	}
 }
 
+// Returns true if the Instance has started and is accepting requests.
 func (i *Instance) Started() bool {
 	return i.state == Running
 }
 
+// Returns true if the Instance has stopped and is not accepting requests.
 func (i *Instance) Stopped() bool {
 	return i.state == Stopped
 }
 
+// Returns true if the Instance is stopping and requests should stop being made.
 func (i *Instance) Stopping() bool {
 	return i.state == Stopping
 }
 
+// Returns true if the Instance is starting.
 func (i *Instance) Starting() bool {
 	return i.state == Starting
 }
 
+// Start will attempt to start the underlying web process returning an error if
+// it is unable to. As it supports asynchronous startup the returned channel can
+// be used to determine when the Instance state has changed to Running.
 func (i *Instance) Start() (<-chan InstanceState, error) {
 	// We can't start if we aren't stopped
 	if !i.Stopped() {
@@ -89,6 +100,9 @@ func (i *Instance) Start() (<-chan InstanceState, error) {
 	return i.stateChan, nil
 }
 
+// Stop will attempt to stop the underlying web process using the InstanceState
+// channel to signal success. An error can be returned immediately if stopping
+// can not be performed at that point.
 func (i *Instance) Stop() (<-chan InstanceState, error) {
 	// We can't start if we aren't stopped
 	if !i.Started() {
@@ -112,12 +126,15 @@ func (i *Instance) Stop() (<-chan InstanceState, error) {
 	return i.stateChan, nil
 }
 
-// This will forcably kill any process as well as stopping any starting process
+// ForceStop will forcefully kill the underlying web process.
 func (i *Instance) ForceStop() error {
 	i.forceStop <- 1
 	return i.cmd.Process.Kill()
 }
 
+// ReverseProxy returns a structure that can be used to make requests to the
+// underlying web process. An error is returned if the Instance is not in the
+// correct state.
 func (i *Instance) ReverseProxy() (*httputil.ReverseProxy, error) {
 	if !i.Started() {
 		return nil, fmt.Errorf("Instance not yet started")
